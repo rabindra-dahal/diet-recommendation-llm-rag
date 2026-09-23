@@ -97,11 +97,13 @@ tab_chat, tab_logs = st.tabs(["💬 Dynamic Nutrition Chat", "📊 My Macro Logs
 with tab_logs:
     uploader.process_custom_rag_uploads(client)
     
+    # ─── UPDATED: EXTRACT AGGREGATED METRICS AND DISPATCH TO CHART CANVAS ───
     metrics = tracker_engine.fetch_kpi_summary_metrics()
     charts_diet.render_analytics_dashboard(
         analytics_logs=tracker_engine.fetch_analytics_logs(),
         caloric_target=daily_kcal_cap,
-        completed_count=metrics["total_calories"]
+        completed_count=metrics["total_calories"],
+        macro_data=metrics # Pass complete tracking dictionary including P, C, F fields
     )
     
     tracker.render_compact_tracker()

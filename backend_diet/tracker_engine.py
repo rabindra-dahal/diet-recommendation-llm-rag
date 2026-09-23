@@ -43,10 +43,10 @@ def fetch_analytics_logs() -> list[tuple]:
     conn.close()
     return rows
 
-
 def load_persisted_food_list() -> list[dict]:
     """Extracts custom logged meals securely using explicit index tuple unpacking."""
     conn = get_db_connection()
+    # Explicitly pull all structural metrics columns
     rows = conn.cursor().execute(
         "SELECT id, item_name, calories, entry_notes FROM dynamic_food_log ORDER BY id DESC"
     ).fetchall()
@@ -56,23 +56,24 @@ def load_persisted_food_list() -> list[dict]:
         for f_id, name, cals, notes in rows
     ]
 
-
-def save_food_item_to_list(food_name: str) -> None:
-    """Saves a recommended meal configuration into the user's tracking profile ledger."""
+def save_food_item_to_list(food_name: str, calories: int, notes: str) -> None:
+    """Saves a recommended meal along with pre-calculated macro parameters instantly."""
     conn = get_db_connection()
+    # Write both name, parsed calories, and structured gram notes on initial collection click
     conn.cursor().execute(
-        "INSERT OR IGNORE INTO dynamic_food_log (item_name) VALUES (?)", (food_name.strip(),)
+        """INSERT OR REPLACE INTO dynamic_food_log (item_name, calories, entry_notes) 
+           VALUES (?, ?, ?)""", 
+        (food_name.strip(), calories, notes.strip())
     )
     conn.commit()
     conn.close()
-
 
 def update_food_log_entry(food_name: str, calories: int, notes: str) -> None:
     """Updates specific calorie numbers and nutritional content notes on saved items."""
     conn = get_db_connection()
     conn.cursor().execute(
         "UPDATE dynamic_food_log SET calories = ?, entry_notes = ? WHERE item_name = ?",
-        (calories, notes, food_name),
+        (calories, notes.strip(), food_name),
     )
     conn.commit()
     conn.close()
@@ -85,26 +86,49 @@ def delete_all_logged_foods() -> None:
     conn.commit()
     conn.close()
 
-
+""" Add Macro Accumulation Aggregations
+    It parses the notes field using simple string matching to extract protein, 
+    carb, and fat estimates (e.g., P:30g, C:45g, F:12g) from your saved foods.
+"""
 def fetch_kpi_summary_metrics() -> dict:
-    """Calculates active summary telemetry across food and calorie entries."""
+    """Calculates active summary telemetry across food, calories, and macronutrient profile splits."""
     conn = get_db_connection()
     cursor = conn.cursor()
     
     rows = cursor.execute("SELECT calories, entry_notes FROM dynamic_food_log").fetchall()
     total_saved = len(rows)
-    
-    logged_calories = [r[0] for r in rows if r[0] > 0]
-    total_calories = sum(logged_calories)
-    
-    # Counts only meal elements possessing valid custom text logs written
+    total_calories = sum([r[0] for r in rows if r[0] is not None])
     completed_reviews = len([r for r in rows if r[1] and str(r[1]).strip() != ""])
     
+    # AUTOMATED ARRIVAL SWEEP: Extract macros without guessing or complex string splitting failures
+    protein_total = 0
+    carbs_total = 0
+    fats_total = 0
+    
+    for _, notes in rows:
+        if not notes:
+            continue
+        try:
+            # Parses a clean, pre-structured context 'P:30g,C:10g,F:5g' perfectly
+            parts = notes.replace(" ", "").split(",")
+            for part in parts:
+                if part.startswith("P:") and "g" in part:
+                    protein_total += int(part.split("P:")[1].split("g")[0])
+                elif part.startswith("C:") and "g" in part:
+                    carbs_total += int(part.split("C:")[1].split("g")[0])
+                elif part.startswith("F:") and "g" in part:
+                    fats_total += int(part.split("F:")[1].split("g")[0])
+        except Exception:
+            continue  
+            
     conn.close()
     return {
         "total_saved": total_saved,
         "total_calories": total_calories,
-        "completed_reviews": completed_reviews
+        "completed_reviews": completed_reviews,
+        "protein": protein_total,
+        "carbs": carbs_total,
+        "fats": fats_total
     }
 
 
