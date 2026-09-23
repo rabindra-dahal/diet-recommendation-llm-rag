@@ -6,4 +6,6 @@ Installtion and running process
 
 - python -m venv venv
 - pip install -r requirements.txt
-- streamlit run app.py
+- pip list
+- streamlit run app_diet.py
+
