@@ -60,6 +60,8 @@ cover/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+*.db.sqlite3
+*.sqlite3
 
 # Flask stuff:
 instance/
@@ -135,6 +137,7 @@ celerybeat.pid
 *.rdb
 *.aof
 *.pid
+*.db
 
 # RabbitMQ
 mnesia/
