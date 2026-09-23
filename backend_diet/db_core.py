@@ -40,5 +40,13 @@ def init_db() -> None:
             id INTEGER PRIMARY KEY AUTOINCREMENT, call_type TEXT, timestamp TEXT
         )"""
     )
+    # ─── NEW: LIVE HYDRATION TRACKING TELEMETRY SCHEMA ───
+    c.execute(
+        """CREATE TABLE IF NOT EXISTS hydration_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, 
+            log_date TEXT, 
+            amount_ml INTEGER
+        )"""
+    )
     conn.commit()
     conn.close()

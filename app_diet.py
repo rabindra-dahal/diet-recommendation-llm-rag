@@ -41,8 +41,42 @@ with st.sidebar:
     st.title("⚙️ Health Control")
     st.metric(label="🔑 Gemini API Calls", value=f"{tracker_engine.get_total_api_calls()} calls")
     st.markdown("---")
+    
+    # ─── NEW: SIDEBAR WATER TRACKER WIDGET ───
+    st.write("💧 **Live Hydration Log**")
+    current_water = tracker_engine.get_daily_hydration_total()
+    st.metric(label="Daily Intake Total", value=f"{current_water} ml / 2500 ml")
+    
+    # Render quick adjustment buttons horizontally
+    c_w1, c_w2 = st.columns(2)
+    with c_w1:
+        if st.button("➕ 250ml", key="btn_add_water_250", width="stretch"):
+            tracker_engine.log_water_intake(250)
+            st.toast("Logged 250ml water! 🥤")
+            st.rerun()
+    with c_w2:
+        if st.button("➕ 500ml", key="btn_add_water_500", width="stretch"):
+            tracker_engine.log_water_intake(500)
+            st.toast("Logged 500ml water! 🫙")
+            st.rerun()
+            
+    st.markdown("---")
     active_program = st.selectbox("Target Dietary Focus Strategy:", ["Weight Loss", "Keto / Low-Carb", "Mass Gain", "High-Protein / Athletic", "Heart-Healthy Balanced"])
-    restrictions = st.multiselect("Allergies & Element Restrictions:", ["Gluten-Free", "Dairy-Free", "Nut-Free", "Vegan", "Soy-Free"])
+
+    st.markdown("---")
+    # ─── FIXED: ADDED UNIQUE KEY SIGNATURE TO PREVENT CLASHES ───
+    active_program = st.selectbox(
+        "Target Dietary Focus Strategy:", 
+        ["Weight Loss", "Keto / Low-Carb", "Mass Gain", "High-Protein / Athletic", "Heart-Healthy Balanced"],
+        key="sidebar_dietary_strategy_select"
+    )
+    
+    restrictions = st.multiselect(
+        "Allergies & Element Restrictions:", 
+        ["Gluten-Free", "Dairy-Free", "Nut-Free", "Vegan", "Soy-Free"],
+        key="sidebar_allergies_restrictions_multiselect" # Also fixed for consistency
+    )
+
     daily_kcal_cap = st.slider("Daily Calorie Intake Limit Target (kcal):", 1200, 4500, 2000, 50)
     st.markdown("---")
     
