@@ -6,17 +6,54 @@ from backend_diet import tracker_engine
 
 @st.dialog("📝 Log Nutrient Breakdown Values")
 def show_review_modal(food_data: dict, index: int) -> None:
-    """Renders overlay popup panels to adjust structural macro entries without causing layout shifts."""
+    """Renders overlay popup panels to adjust structural macro entries with automated proportional re-scaling."""
     st.write(f"#### Log Metrics for: {food_data['title']}")
     
+    # 1. Pre-parse current macro metrics values out of the notes field
+    old_cals = max(1, int(food_data["calories"]))
+    old_p, old_c, old_f = 0, 0, 0
+    
+    try:
+        parts = food_data["notes"].replace(" ", "").split(",")
+        for part in parts:
+            if part.startswith("P:") and "g" in part:
+                old_p = int(part.split("P:")[1].split("g")[0])
+            elif part.startswith("C:") and "g" in part:
+                old_c = int(part.split("C:")[1].split("g")[0])
+            elif part.startswith("F:") and "g" in part:
+                old_f = int(part.split("F:")[1].split("g")[0])
+    except Exception:
+        pass
+
     with st.form(key=f"diet_modal_form_{index}", border=False):
-        current_cals = st.number_input("Recorded Calories (kcal):", min_value=0, value=int(food_data["calories"]), step=50, key=f"kcal_num_{index}")
-        current_notes = st.text_area("Ingredients / Macronutrient breakdown notes:", value=food_data["notes"], key=f"kcal_txt_{index}")
+        # User modifies the total calorie input field
+        current_cals = st.number_input(
+            "Recorded Calories (kcal):", 
+            min_value=0, 
+            value=old_cals, 
+            step=50, 
+            key=f"kcal_num_{index}"
+        )
+        
+        st.markdown(f"**Current Macro Baseline:** P: {old_p}g | C: {old_c}g | F: {old_f}g")
+        st.caption("💡 Changing the calories above will automatically re-scale these grams proportionally upon saving.")
         
         if st.form_submit_button("💾 Save Macro Entry", width="stretch"):
-            tracker_engine.update_food_log_entry(food_data["title"], current_cals, current_notes)
+            # 2. AUTOMATED PROPORTIONAL RE-SCALING LOGIC
+            # Calculate the proportional difference multiplier ratio
+            scale_ratio = current_cals / old_cals
+            
+            new_p = round(old_p * scale_ratio)
+            new_c = round(old_c * scale_ratio)
+            new_f = round(old_f * scale_ratio)
+            
+            # Format back into the standard parseable token string sequence
+            updated_notes = f"P:{new_p}g, C:{new_c}g, F:{new_f}g"
+            
+            # Persist values straight down to the database layers
+            tracker_engine.update_food_log_entry(food_data["title"], current_cals, updated_notes)
             st.session_state.reading_list = tracker_engine.load_persisted_food_list()
-            st.toast("Macro metrics saved successfully!")
+            st.toast(f"Recalculated macros to: {updated_notes}! 🚀")
             st.rerun()
 
 

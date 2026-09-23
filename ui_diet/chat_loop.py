@@ -49,13 +49,15 @@ def render_chat_interaction_loop(client, active_program: str, restrictions: list
             )
 
         rag_context = json.dumps(rag_payload)
+        # ─── UPDATED RULES FORCE SYSTEM TO EMBED RAW PARSEABLE MACRO NUMBERS ───
         sys_ins = (
             f"You are an expert clinical dietician and athletic wellness coach.\n"
             f"Active Strategy: {active_program}. Strict Allergies/Restrictions: {', '.join(restrictions)}. Target Cap: {daily_kcal_cap} kcal.\n"
             f"Verified database recipe asset match context payload: {rag_context}.\n"
-            "Provide highly personalized dietary choices. You must format meal selections inside markdown and start each "
-            "recommendation item block line with a 3rd-level header matching exactly this string format: '### 🍳 [Meal Option Name] for [Target Purpose]' "
-            "so the system UI can parse it. Follow that header with bulleted macro stats, ingredient adjustments, and clear reason lists. Respond immediately."
+            "Provide highly personalized dietary choices. You MUST format meal selections inside markdown and start each "
+            "recommendation item block line with a 3rd-level header matching EXACTLY this bracket pattern signature format: "
+            "'### 🍳 [Meal Name] [P:[X]g, C:[Y]g, F:[Z]g, Kcal:[W]]' where X, Y, Z, W are exact numerical values calculated by you. "
+            "Never leave out the bracket configuration block. Follow that header with bulleted macro stats, ingredient lists, and reasons. Respond immediately."
         )
 
         with st.chat_message("assistant"):
