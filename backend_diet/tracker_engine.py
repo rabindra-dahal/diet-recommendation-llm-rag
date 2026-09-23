@@ -114,5 +114,31 @@ def clear_entire_session() -> None:
     conn.cursor().execute("DELETE FROM chat_history")
     conn.cursor().execute("DELETE FROM dynamic_food_log")
     conn.cursor().execute("DELETE FROM api_usage_telemetry")
+    conn.cursor().execute("DELETE FROM hydration_log")
     conn.commit()
     conn.close()
+
+# (Add Water Ingestion Operations Hooks)
+def log_water_intake(amount_ml: int) -> None:
+    """Appends an incremental fluid volume record to the current calendar date."""
+    conn = get_db_connection()
+    current_date = datetime.now().strftime("%Y-%m-%d")
+    conn.cursor().execute(
+        "INSERT INTO hydration_log (log_date, amount_ml) VALUES (?, ?)",
+        (current_date, amount_ml),
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_daily_hydration_total() -> int:
+    """Calculates the total water volume consumed on the current calendar date."""
+    conn = get_db_connection()
+    current_date = datetime.now().strftime("%Y-%m-%d")
+    res = conn.cursor().execute(
+        "SELECT SUM(amount_ml) FROM hydration_log WHERE log_date = ?", 
+        (current_date,)
+    ).fetchone()
+    conn.close()
+    return res if res and res is not None else 0
+

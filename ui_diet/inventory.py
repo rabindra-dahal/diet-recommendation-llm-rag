@@ -15,7 +15,8 @@ def render_document_inventory_table() -> None:
 
     for idx, doc in enumerate(documents):
         with st.container(border=True):
-            col_m, col_s, col_a = st.columns()
+            # ─── FIXED: ADDED POSITIONAL COLUMN COUNT PARAMETER SPEC ───
+            col_m, col_s, col_a = st.columns(3)
             with col_m:
                 st.markdown(f"**🥗 {doc['title']}**")
                 st.caption(f"Focus: `{doc['category']}`")
